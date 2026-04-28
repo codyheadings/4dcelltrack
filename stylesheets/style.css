@@ -87,7 +87,15 @@ main{
     margin-bottom: 20px;
 }
 
-.card h3 {
+.card h4 {
+    margin-bottom: 4px;
+}
+
+hr{
+    margin: 5px 0px;
+}
+
+.card hr{
     margin-bottom: 8px;
 }
 
