@@ -5,18 +5,19 @@
     <meta charset="UTF-8">
     <meta name="description" content="Repository page for cell migration tracking pipeline.">
     <link type="text/css" rel="stylesheet" href="stylesheets/style.css">
-    <title>Home | Migration Methods</title>
+    <title>Home | AssembloidTrack</title>
 </head>
 
 <body>
     <header class="site-header">
         <div class="header-inner">
-            <h1 class="title">4dcelltrack Pipeline</h1>
+            <h1 class="title">AssembloidTrack Pipeline</h1>
 
             <nav class="nav">
                 <ul>
                     <li><a href="#">Home</a></li>
                     <li><a href="#">About</a></li>
+                    <li><a href="https://github.com/codyheadings/4dcelltrack/archive/refs/heads/main.zip">Download</a></li>
                     <li><a href="https://github.com/codyheadings/4dcelltrack/tree/main" target="_blank">GitHub</a></li>
                 </ul>
             </nav>
@@ -32,26 +33,645 @@
             </section>
 
             <section class="card">
-                <h3>Operation</h3>
+                <h3>Pipeline Operation</h3>
                 <hr>
                 <p>Placeholder for pipeline steps and examples.</p>
+
             </section>
 
             <section class="card">
                 <h3>Script Documentation</h3>
                 <hr>
-                <p>Placeholder for detailed descriptions of each script.</p>
-                
-                <h4>preProcessND2.m</h4>
-                <h4>compileResultsFromCSV.m</h4>
-                <h4>cellDistances.m</h4>
-                <h4>cellSpeeds.m</h4>
-                <h4>aggregateTrackingResults.m</h4>
-                <h4>analyzeByGroup.m</h4>
-                <h4>computeMSD.m</h4>
-                <h4>computeTurningAngles.m</h4>
-                <h4>plotRepresentativeGraphs.m</h4>
-                <h4>segmentTracks.m</h4>
+                <p>Detailed descriptions of each script.</p>
+
+                <div class="doc">
+                <input id="preProcessND2-toggle" class="hidden" type="checkbox">
+                <label for="preProcessND2-toggle" class="dropdown-label"><h4>preProcessND2.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+preProcessND2 loads data from a .nd2 Nikon Microscope Image file using Bio-Formats,
+applies optional spatial binning, performs Gaussian background subtraction,
+and saves the processed file as a BigTIFF.
+</p>
+
+<p><strong>Input:</strong></p>
+<ul>
+    <li><code>inputFile</code> - path to an ND2 file</li>
+    <li><code>outputFolder</code> - directory where output TIFF will be saved</li>
+    <li><code>options</code> (optional):
+        <ul>
+            <li><code>SeriesIndex</code> - ND2 series to process</li>
+            <li><code>ChannelIndex</code> - channel to extract</li>
+            <li><code>BinSize</code> - spatial binning factor</li>
+            <li><code>GaussianSigma</code> - smoothing kernel for background subtraction</li>
+            <li><code>Logs</code> - enable console output</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<ul>
+    <li>Saves a processed BigTIFF file to <code>outputFolder</code></li>
+</ul>
+
+<p><strong>Processing Steps:</strong></p>
+<ul>
+    <li>Load ND2 file via Bio-Formats</li>
+    <li>Select specified series and channel</li>
+    <li>Apply spatial binning (optional)</li>
+    <li>Apply 3D Gaussian background subtraction</li>
+    <li>Reformat data to (X, Y, Z, C, T)</li>
+    <li>Export as BigTIFF</li>
+</ul>
+
+<p><strong>Notes:</strong></p>
+<ul>
+    <li>Requires Bio-Formats (<code>bfGetReader</code>, <code>bfsave</code>)</li>
+    <li>Uses parallel processing (<code>parfor</code>) for background subtraction</li>
+    <li>Large datasets may require significant memory</li>
+</ul>
+
+<p><strong>Usage Example:</strong></p>
+<pre class="codeblock"><code>
+preProcessND2( ...
+    <span class="string">"data/sample.nd2"</span>, ...
+    <span class="string">"output"</span>, ...
+    <span class="string">'SeriesIndex'</span>, 1, ... <span class="comment">% or SeriesIndex = 1</span>
+    <span class="string">'ChannelIndex'</span>, 2, ...
+    <span class="string">'BinSize'</span>, 2 ...
+    ...
+);
+
+<span class="comment">% Output: Processed_S1_C2.tif saved to "output"</span>
+</code></pre>
+<hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="compile-toggle" class="hidden" type="checkbox">
+                <label for="compile-toggle" class="dropdown-label"><h4>compileResultsFromCSV.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+compileResultsFromCSV gathers tracking results from multiple subdirectories into a single table.
+Each subdirectory is expected to contain a results file (default: <code>Results.csv</code>) exported from ImageJ or similar tools.
+Optional X, Y, Z, and Time unit conversions can be applied during compilation.
+</p>
+
+<p><strong>Input:</strong></p>
+<ul>
+    <li><code>inputFolder</code> - a directory containing tracker subfolders</li>
+    <li><code>outputFolder</code> (optional) - a directory where compiled results will be saved</li>
+    <li><code>options</code> (optional):
+        <ul>
+            <li><code>XYConversion</code> - a scaling factor for X and Y</li>
+            <li><code>ZConversion</code> - a scaling factor for Z (slice)</li>
+            <li><code>TConversion</code> - a scaling factor for time</li>
+            <li><code>OutputFilename</code> - the name of output file</li>
+            <li><code>ResultsFilename</code> - the expected filename in each subfolder</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<ul>
+    <li><code>compiledData</code> - a table containing all tracking points across all trackers</li>
+</ul>
+
+<p><strong>Expected Folder Structure:</strong></p>
+<pre class="codeblock"><code>
+inputFolder/
+├── Tracker1/
+│   └── Results.csv
+├── Tracker2/
+│   └── Results.csv
+</code></pre>
+
+<p><strong>Output Columns:</strong></p>
+<ul>
+    <li><code>Num</code> - the row index within original file</li>
+    <li><code>TrackerName</code> - the source subfolder name</li>
+    <li><code>X, Y, Z</code> - spatial coordinates (converted)</li>
+    <li><code>T</code> - time (converted)</li>
+</ul>
+
+<p><strong>Usage Example:</strong></p>
+<pre class="codeblock"><code>
+compiledData = compileResultsFromCSV( ...
+    <span class="string">"data/inputFolder"</span>, ...
+    <span class="string">"data/outputFolder"</span>, ...
+    <span class="string">'XYConversion'</span>, 0.65, ... <span class="comment">% or XYConversion = 0.65</span>
+    <span class="string">'ZConversion'</span>, 20, ...
+    <span class="string">'TConversion'</span>, 30 ...
+    ...);
+
+head(compiledData)
+</code></pre>
+<hr>
+</div>
+                </div>
+                <div class="doc">
+                <input id="dist-toggle" class="hidden" type="checkbox">
+                <label for="dist-toggle" class="dropdown-label"><h4>cellDistances.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+cellDistances computes displacement-based metrics for each tracked cell, 
+including total distance traveled and net displacement. 
+It operates on compiled tracking data (from <code>compileResultsFromCSV.m</code>) 
+and uses <code>segmentTracks</code> to separate individual trajectories.
+</p>
+
+<p><strong>Input:</strong></p>
+<ul>
+    <li><code>compiledData</code> - a table containing at minimum:
+        <code>X</code>, <code>Y</code>, <code>Z</code>, <code>T</code>
+    </li>
+    <li><code>outputFolder</code> (optional) - directory to save results</li>
+    <li><code>options</code> (optional):
+        <ul>
+            <li><code>OutputFilename</code> - the output file name</li>
+            <li><code>Logs</code> - enable/disable console output</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<ul>
+    <li><code>distanceTable</code> - a table with one row per cell track</li>
+</ul>
+
+<p><strong>Metrics Computed:</strong></p>
+<ul>
+    <li>Total path length (cumulative distance)</li>
+    <li>Net displacement (start -> end distance)</li>
+    <li>Optional derived ratios depending on implementation</li>
+</ul>
+
+<p><strong>Notes:</strong></p>
+<ul>
+    <li>Uses <code>segmentTracks</code> internally</li>
+    <li>Tracks must be time-ordered</li>
+    <li>Requires consistent units across X/Y/Z</li>
+</ul>
+
+<p><strong>Usage Example:</strong></p>
+<pre class="codeblock"><code>
+data = readtable(<span class="string">'compiledResults.xlsx'</span>);
+
+distanceTable = cellDistances(data, <span class="string">"output"</span>);
+
+head(distanceTable) <span class="comment">% preview results</span>
+</code></pre>
+<hr>
+</div>
+</div>
+                <div class="doc">
+                <input id="speed-toggle" class="hidden" type="checkbox">
+                <label for="speed-toggle" class="dropdown-label"><h4>cellSpeeds.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+cellSpeeds calculates speed-based metrics for each tracked cell using
+compiled tracking data. It computes average speed, cumulative speed,
+and variance across the full trajectory as well as split into first
+and second halves.
+</p>
+
+<p><strong>Input:</strong></p>
+<ul>
+    <li><code>compiledData</code> - table with columns:
+        <code>X</code>, <code>Y</code>, <code>Z</code>, <code>T</code>
+    </li>
+    <li><code>outputFolder</code> (optional) - directory for saved results</li>
+    <li><code>options</code> (optional):
+        <ul>
+            <li><code>OutputFilename</code> - output file name</li>
+            <li><code>Logs</code> - enable/disable logging</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<ul>
+    <li><code>speedTable</code> - table with one row per cell track</li>
+</ul>
+
+<p><strong>Output Columns:</strong></p>
+<ul>
+    <li><code>Cell</code> - track index</li>
+    <li><code>AvgCellSpeed</code> - mean speed</li>
+    <li><code>CumulativeCellSpeed</code> - total speed</li>
+    <li><code>varianceEntirePeriod</code> - variance across full track</li>
+    <li><code>varianceFirstHalf</code> - variance (first half)</li>
+    <li><code>varianceLastHalf</code> - variance (second half)</li>
+</ul>
+
+<p><strong>Notes:</strong></p>
+<ul>
+    <li>Assumes constant frame interval across all tracks</li>
+    <li>Uses Euclidean distance between consecutive points</li>
+    <li>Relies on <code>segmentTracks</code> to separate trajectories</li>
+</ul>
+
+<p><strong>Usage Example:</strong></p>
+<pre class="codeblock"><code>
+data = readtable(<span class="string">'compiledResults.xlsx'</span>);
+
+speedTable = cellSpeeds( ...
+    data, ...
+    <span class="string">"output"</span>, ...
+    struct(<span class="string">'Logs'</span>, true) ...
+);
+
+mean(speedTable.AvgCellSpeed) <span class="comment">% average across all cells</span>
+</code></pre>
+<hr>
+</div>
+</div>
+                <div class="doc">
+                <input id="agg-toggle" class="hidden" type="checkbox">
+                <label for="agg-toggle" class="dropdown-label"><h4>aggregateTrackingResults.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+    <code>aggregateTrackingResults</code> traverses a directory tree of tracking results
+    and compiles them into structured summary tables.
+</p>
+
+<p>
+    Each top-level folder inside <code>rootFolder</code> is treated as an independent 
+    dataset. All nested folders above the tracker level are interpreted as 
+    experimental conditions and automatically mapped to columns 
+    (<code>Condition1</code>, <code>Condition2</code>, etc.) in the output.
+</p>
+
+<p>
+    For every detected tracker directory (i.e., a folder containing a results file), 
+    this function:
+</p>
+<ul>
+    <li>Loads tracking data using <code>compileResultsFromCSV</code></li>
+    <li>Computes per-cell distance metrics using <code>cellDistances</code></li>
+    <li>Computes per-cell speed metrics using <code>cellSpeeds</code></li>
+    <li>Merges results into a single table per dataset</li>
+</ul>
+
+<p>
+    Optionally, a global file containing all raw compiled tracks can also be saved. 
+    This is useful for downstream visualization (e.g., 
+    <code>plotRepresentativeGraphs</code>).
+</p>
+
+<p>
+    <strong>Example Folder Structure:</strong>
+</p>
+
+<pre class="codeblock">
+<code>rootFolder/
+├── Channel1/
+│   ├── Dataset1/
+│   │   ├── Series1/
+│   │   │   ├── Tracker1/
+│   │   │   │   └── Results.csv
+│   │   │   └── Tracker2/
+│   │   │       └── Results.csv
+</code>
+</pre>
+
+<p>
+    <strong>Inputs:</strong>
+</p>
+<ul>
+    <li><code>rootFolder</code> - top-level directory containing datasets</li>
+    <li><code>outputFolder</code> - directory to save output files</li>
+    <li><code>options</code> - struct with fields:
+        <ul>
+            <li><code>SaveAggregatedCSVResults</code> - save all raw tracks</li>
+            <li><code>XYConversion</code>, <code>ZConversion</code>, <code>TConversion</code> - unit scaling factors</li>
+            <li><code>OutputFilename</code> - output naming convention</li>
+            <li><code>ResultsFilename</code> - expected tracker file name (default: Results.csv)</li>
+            <li><code>Logs</code> - enable console output</li>
+        </ul>
+    </li>
+</ul>
+
+<p>
+    <strong>Output:</strong>
+</p>
+<ul>
+    <li><code>aggregatedData</code> - struct where each field corresponds to a dataset</li>
+    <li>Each field contains a table with:
+        <ul>
+            <li>Condition columns (Condition1...N)</li>
+            <li>TrackerName</li>
+            <li>Cell-level speed metrics</li>
+            <li>Cell-level distance metrics</li>
+        </ul>
+    </li>
+</ul>
+
+<p>
+    <strong>Usage Example:</strong>
+</p>
+
+<pre class="codeblock">
+<code><span class="comment">% Run full aggregation pipeline</span>
+data = aggregateTrackingResults( ...
+    <span class="string">'/data/root'</span>, ...
+    <span class="string">'/output'</span>);
+
+<span class="comment">% With unit conversion and raw track export</span>
+data = aggregateTrackingResults( ...
+    <span class="string">'/data/root'</span>, ...
+    <span class="string">'/output'</span>, ...
+    XYConversion=0.65, ...
+    ZConversion=20, ...
+    TConversion=30, ...
+    SaveAggregatedCSVResults=true);
+</code>
+</pre>
+
+<p>
+    <strong>Notes:</strong>
+</p>
+<ul>
+    <li>The directory tree must be at least two levels deep (conditions + tracker)</li>
+    <li>Tracker folders must contain a file matching <code>ResultsFilename</code></li>
+    <li>Condition labels are inferred automatically from folder names</li>
+    <li>Output tables can be edited post hoc to rename or reorganize conditions</li>
+</ul>
+<hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="filter-toggle" class="hidden" type="checkbox">
+                <label for="filter-toggle" class="dropdown-label"><h4>filterDuplicateTracks.m</h4></label>
+
+<div class="dropdown">
+    WIP
+<hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="analyze-toggle" class="hidden" type="checkbox">
+                <label for="analyze-toggle" class="dropdown-label"><h4>analyzeByGroup.m</h4></label>
+
+<div class="dropdown">
+    WIP
+    <hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="msd-toggle" class="hidden" type="checkbox">
+                <label for="msd-toggle" class="dropdown-label"><h4>computeMSD.m</h4></label>
+
+<div class="dropdown">
+<p>
+    <strong>Description:</strong><br>
+    <code>computeMSD</code> calculates the Mean Squared Displacement (MSD) 
+    from 3D cell tracking data. It supports both table input and file-based input, 
+    automatically segmenting trajectories using <code>segmentTracks</code> and 
+    computing ensemble MSD statistics.
+</p>
+
+<p>
+    This function relies on the external 
+    <strong>@msdanalyzer</strong> MATLAB toolkit <a target="_blank" href="https://tinevez.github.io/msdanalyzer/">(developed by Jean-Yves Tinevez)</a>.
+   <br><strong>** You must have this package installed and added to your MATLAB path before you can use this function. **</strong>
+</p>
+
+<p>
+    The function optionally generates a mean MSD plot with error bars and can 
+    save the figure to disk.
+</p>
+
+<p>Further steps: TODO</p>
+
+<p>
+    <strong>Inputs:</strong>
+</p>
+<ul>
+    <li><code>inputData</code> - table or file path containing columns: T, X, Y, Z</li>
+    <li><code>outputFolder</code> - (optional) directory to save output figure</li>
+    <li><code>options</code> - struct with fields:
+        <ul>
+            <li><code>OutputFilename</code> - name of saved figure</li>
+            <li><code>CreateFigure</code> - toggle plotting</li>
+            <li><code>Logs</code> - enable console output</li>
+        </ul>
+    </li>
+</ul>
+
+<p>
+    <strong>Output:</strong>
+</p>
+<ul>
+    <li><code>mmsd</code> - Nx4 array from <code>@msdanalyzer</code>:
+        <ul>
+            <li>Column 1: time lag</li>
+            <li>Column 2: mean MSD</li>
+            <li>Column 3: standard deviation</li>
+            <li>Column 4: number of samples</li>
+        </ul>
+    </li>
+</ul>
+
+<p>
+    <strong>Usage Example:</strong>
+</p>
+
+<pre class="codeblock">
+<code><span class="comment">% Load tracking data from file</span>
+mmsd = computeMSD(<span class="string">'/example/data/tracks.xlsx'</span>);
+
+<span class="comment">% Use an existing table and save a figure</span>
+data = readtable(<span class="string">'tracks.xlsx'</span>);
+mmsd = computeMSD(data, <span class="string">'/output/folder'</span>, ...
+    OutputFilename=<span class="string">"MyMSD.fig"</span>);
+</code>
+</pre>
+<hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="angle-toggle" class="hidden" type="checkbox">
+                <label for="angle-toggle" class="dropdown-label"><h4>computeTurningAngles.m</h4></label>
+
+<div class="dropdown">
+<p>
+    <strong>Description:</strong><br>
+    <code>computeTurningAngles</code> calculates turning angles between 
+    consecutive displacement vectors for each tracked cell in 3D space.
+</p>
+
+<p>
+    The function first segments trajectories using <code>segmentTracks</code>, 
+    then computes angles between successive motion vectors using the dot product. 
+    Angles are reported in degrees.
+</p>
+
+<p>
+    Any steps with zero-length displacement vectors are skipped to avoid 
+    division-by-zero errors.
+</p>
+
+<p>
+    <strong>Inputs:</strong>
+</p>
+<ul>
+    <li><code>inputData</code> - table or file path containing T, X, Y, Z</li>
+    <li><code>outputFolder</code> - (optional) directory to save results</li>
+    <li><code>options</code> - struct with fields:
+        <ul>
+            <li><code>OutputFilename</code> - output CSV file name</li>
+            <li><code>Logs</code> - enable console output</li>
+        </ul>
+    </li>
+</ul>
+
+<p>
+    <strong>Output:</strong>
+</p>
+<ul>
+    <li><code>angleTable</code> - table with:
+        <ul>
+            <li><code>CellNum</code> - track index</li>
+            <li><code>TurningAngle_deg</code> - angle between steps</li>
+        </ul>
+    </li>
+</ul>
+
+<p>
+    <strong>Usage Example:</strong>
+</p>
+
+<pre class="codeblock">
+<code><span class="comment">% Compute angles from a file</span>
+angles = computeTurningAngles(<span class="string">'/example/data/tracks.xlsx'</span>);
+
+<span class="comment">% Compute and save results</span>
+data = readtable(<span class="string">'tracks.xlsx'</span>);
+angles = computeTurningAngles(data, <span class="string">'/output'</span>, ...
+    OutputFilename=<span class="string">"Angles.csv"</span>);
+</code>
+</pre>
+<hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="plot-toggle" class="hidden" type="checkbox">
+                <label for="plot-toggle" class="dropdown-label"><h4>plotRepresentativeGraphs.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+plotRepresentativeGraphs visualizes representative cell tracks in 3D.
+Tracks are sorted by total path length, and a subset near the median
+is selected for plotting. Two figures are generated:
+(1) cumulative displacement over time, and
+(2) net displacement vectors.
+</p>
+
+<p><strong>Input:</strong></p>
+<ul>
+    <li><code>inputFile</code> - path to aggregated tracking results file</li>
+    <li><code>outputFolder</code> (optional) - directory to save figures</li>
+    <li><code>numTracks</code> - number of tracks to plot</li>
+    <li><code>offset</code> - index offset from median track selection</li>
+    <li><code>options</code> (optional):
+        <ul>
+            <li><code>FileType</code> - output file format (e.g., .fig, .png)</li>
+            <li><code>ShowAxes</code> - toggle axis labels</li>
+            <li><code>ShowTitle</code> - toggle titles</li>
+            <li><code>TimeScale</code> - scaling factor for time values</li>
+            <li><code>SpaceUnit</code> - units for spatial axes</li>
+            <li><code>TimeUnit</code> - units for time colorbar</li>
+            <li><code>Logs</code> - enable console output</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<ul>
+    <li><code>fig1</code> - cumulative displacement figure</li>
+    <li><code>fig2</code> - net displacement vector figure</li>
+</ul>
+
+<p><strong>Notes:</strong></p>
+<ul>
+    <li>Uses <code>segmentTracks</code> internally</li>
+    <li>Tracks are centered to start at the origin</li>
+    <li>Time is visualized using a color gradient</li>
+    <li>Selection is based on median track length</li>
+</ul>
+
+<p><strong>Usage Example:</strong></p>
+<pre class="codeblock"><code>
+[fig1, fig2] = plotRepresentativeGraphs( ...
+    <span class="string">"AggregatedResults.xlsx"</span>, ...
+    <span class="string">"figures"</span>, ...
+    8, ...
+    0, ...
+    <span class="string">'TimeScale'</span>, 60, ...
+    <span class="string">'TimeUnit'</span>, <span class="string">"hr"</span> ...
+    ...
+);
+
+<span class="comment">% fig1 = cumulative displacement</span>
+<span class="comment">% fig2 = net displacement vectors</span>
+</code></pre>
+<hr>
+</div>
+</div>
+
+                <div class="doc">
+                <input id="segment-toggle" class="hidden" type="checkbox">
+                <label for="segment-toggle" class="dropdown-label"><h4>segmentTracks.m</h4></label>
+
+<div class="dropdown">
+<p><strong>Description:</strong><br>
+segmentTracks splits a table of time-ordered tracking coordinates into individual cell trajectories.
+A new track is assumed to begin whenever the time column (T) resets to 0.
+</p>
+
+<p><strong>Input:</strong></p>
+<ul>
+    <li><code>data</code> - a MATLAB table containing at minimum the columns:
+        <code>X</code>, <code>Y</code>, <code>Z</code>, <code>T</code>
+    </li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<ul>
+    <li><code>tracks</code> - a cell array of tables, where each cell contains one trajectory</li>
+</ul>
+
+<p><strong>Notes:</strong></p>
+<ul>
+    <li>Input data must be sorted in time order</li>
+    <li>Each track must start with <code>T = 0</code></li>
+    <li>Tracks shorter than 1 frame are ignored</li>
+</ul>
+
+<p><strong>Usage Example:</strong></p>
+<pre class="codeblock"><code>
+data = readtable(<span class="string">'example/directory/trackingData.xlsx'</span>);
+
+tracks = segmentTracks(data);
+
+<span class="comment">% Access first track</span>
+track1 = tracks{1};
+plot3(track1.X, track1.Y, track1.Z);</code></pre>
+<hr>
+</div>
+</div>
             </section>
 
             <a href="#top" class="top">Go to Top</a>
@@ -59,7 +679,7 @@
     </div>
 
     <footer>
-        <p>Last Updated: April 27 2026</p>
+        <p>Last Updated: April 29, 2026</p>
     </footer>
 </body>
 

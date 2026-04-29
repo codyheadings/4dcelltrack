@@ -130,3 +130,60 @@ footer {
   background-color: #f9fafc;
   transform: translateY(-2px);
 }
+
+.codeblock {
+    background-color: #ffffff;
+    border: 1px solid #d3d3d3;
+    margin: 10px 5px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.15;
+    color: #000000;
+    overflow-x: auto;
+    padding: 12px;
+}
+
+code .keyword{
+    color: #0E00FF;
+}
+
+code .string{
+    color: #AA04F9 ;
+}
+
+code .comment{
+    color: #028009 ;
+}
+
+.dropdown-label {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+label::after {
+  content: '▽';
+  margin-left: 10px;
+  font-size: 0.75em;
+  transition: transform step-start;
+  line-height: 1;
+}
+
+.hidden {
+    display: none;
+}
+
+.dropdown {
+    display: none;
+}
+
+.hidden:checked ~ .dropdown{
+    display: block;
+}
+
+.hidden:checked + label::after {
+  transform: rotate(180deg);
+}
