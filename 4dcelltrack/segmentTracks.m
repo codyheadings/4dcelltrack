@@ -1,10 +1,7 @@
 function tracks = segmentTracks(data)
-% SEGMENTTRACKS Split a tracking table into a cell array of track tables.
-% A new track begins each time the T column resets to 0.
-%
-%
-%
-% ** Helper function used for speed and distance calculations. **
+% SEGMENTTRACKS Split a tracking table (X Y Z T) into a cell array of 
+% individual track tables. A new track begins each time the T column 
+% resets to 0.
 
     if ~istable(data) || ~ismember('T', data.Properties.VariableNames)
         error('segmentTracks:invalidInput', ...

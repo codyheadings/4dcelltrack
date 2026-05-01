@@ -22,7 +22,7 @@ function aggregatedData = aggregateTrackingResults(rootFolder, outputFolder, opt
 % Optional: 
 %   options
 %
-%       SavedAggregatedCSVResults: (logical, default: false)
+%       SaveAggregatedCSVResults: (logical, default: false)
 %           Save a combined results file with all tracking data in one
 %           list to the output folder, uncategorized but sorted by tracker.
 %           Useful for plotting representative tracks.
@@ -160,7 +160,11 @@ function aggregatedData = aggregateTrackingResults(rootFolder, outputFolder, opt
             end
 
             compiled = compiled(strcmp(compiled.TrackerName, trackerName), :);
-            aggregatedResults = [aggregatedResults; compiled]; %#ok<AGROW>
+
+            if height(compiled) > 0
+                condPrefix = buildConditionTable(conditionValues, conditionColNames, height(compiled));
+                aggregatedResults = [aggregatedResults; [condPrefix, compiled]]; %#ok<AGROW>
+            end
  
             if isempty(compiled) || height(compiled) == 0
                 if options.Logs
@@ -230,6 +234,9 @@ function aggregatedData = aggregateTrackingResults(rootFolder, outputFolder, opt
     if options.SaveAggregatedCSVResults
         resultsOutPath = fullfile(outputFolder, "AggregatedCSVResults.xlsx");
         writetable(aggregatedResults, resultsOutPath);
+        if options.Logs
+            fprintf('Saved aggregated CSV results to %s\n', resultsOutPath);
+        end
     end
  
     if options.Logs

@@ -1,4 +1,4 @@
-function results = analyzeByGroup(inputFile, swTestPath, groupColumn, outputFile, options)
+function results = analyzeByGroup(inputData, swTestPath, groupColumn, outputFile, options)
 % ANALYZEBYGROUP Full Statistical analysis using file created from 
 % aggregateTrackingResults with normality testing.
 % 
@@ -9,8 +9,10 @@ function results = analyzeByGroup(inputFile, swTestPath, groupColumn, outputFile
 % INPUT:
 % 
 % Required:
-%   inputFile: (char | string)
-%       Path to the .xlsx produced by aggregateTrackingResults.
+%   inputData: (table | string | char)
+%       If string: Path to the .xlsx produced by aggregateTrackingResults.
+%       If table: aggregatedData / filteredData table produced by the
+%       respective functions.
 %
 %   swTestPath: (char | string)
 %       Path to a folder containing swtest.m (Shapiro-Wilk test).
@@ -25,8 +27,9 @@ function results = analyzeByGroup(inputFile, swTestPath, groupColumn, outputFile
 %
 % Optional:
 %   Metrics: (cell array of char, default: all available metrics)
-%       Subset of metric column names to analyse. Defaults to all metrics
-%       present in the file that match the expected column names.
+%       Selection of all metric columns to perform analysis on.
+%       Defaults to all metrics present in the file that match the 
+%       expected column names.
 %
 %   ConditionColumns: (cell array of char, default: auto-detected)
 %       Names of columns to use as descriptors in the wide-format metric
@@ -43,23 +46,25 @@ function results = analyzeByGroup(inputFile, swTestPath, groupColumn, outputFile
 %       .MetricTables - struct with one field per metric (wide-format table)
 %       .PairwiseTests - struct with one field per group pair (comparison table)
 %
-% FILE SHEETS:
+% OUTPUT FILE SHEETS:
+%
 %   Normality Tests
 %       Metric | Group | h_value | p_value
 %       One row per metric-group combination. h=TRUE means non-normal.
 %
-%   <MetricName>  (one sheet per metric)
+%   <MetricName> (one sheet per metric)
 %       Wide format: descriptor columns | Cell1 | Cell2 | ... | CellN | Average
 %       Descriptor columns are all Condition columns plus TrackerID.
 %       Each row is one tracker/series combination; each CellN column is
-%       that cell's value for the metric; trailing cells are blank.
+%       that cell's value for the metric; trailing cells are blank. Useful
+%       for making graphs from the raw data.
 %
-%   <GroupA> vs <GroupB>  (one sheet per unique pair of groups)
+%   <GroupA> vs <GroupB> (one sheet per unique pair of groups)
 %       Metric | p_value | h_value | <GroupA>_Mean | <GroupB>_Mean |
 %       <GroupA>_Median | <GroupB>_Median
 
     arguments
-        inputFile (1,1) string
+        inputData {mustBeA(inputData,["table","string","char"])}
         swTestPath (1,1) string
         groupColumn (1,1) string
         outputFile (1,1) string
@@ -68,9 +73,19 @@ function results = analyzeByGroup(inputFile, swTestPath, groupColumn, outputFile
         options.Logs (1,1) logical = true
     end
 
-    if ~isfile(inputFile)
-        error('analyzeByGroup:fileNotFound', ...
-              'inputFile does not exist:\n  %s', inputFile);
+   if istable(inputData)
+        data = inputData;
+
+    elseif isstring(inputData) || ischar(inputData)
+        if ~isfile(inputData)
+            error('analyzeByGroup:fileNotFound', ...
+                'File not found:\n%s', inputData);
+        end
+        data = readtable(inputData, VariableNamingRule='preserve');
+
+    else
+        error('analyzeByGroup:invalidInput', ...
+            'Input must be a table or file path.');
     end
 
     % Add swtest to path or throw error
@@ -90,9 +105,8 @@ function results = analyzeByGroup(inputFile, swTestPath, groupColumn, outputFile
     end
 
     if options.Logs
-        fprintf('Loading: %s\n', inputFile);
+        fprintf('Loading inputData\n');
     end
-    data = readtable(inputFile, VariableNamingRule='preserve');
 
     if ~ismember(groupColumn, data.Properties.VariableNames)
         error('analyzeByGroup:invalidGroupColumn', ...
