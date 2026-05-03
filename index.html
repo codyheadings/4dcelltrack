@@ -16,7 +16,6 @@
             <nav class="nav">
                 <ul>
                     <li><a href="#">Home</a></li>
-                    <li><a href="#">About</a></li>
                     <li><a href="https://github.com/codyheadings/4dcelltrack/archive/refs/heads/main.zip">Download</a></li>
                     <li><a href="https://github.com/codyheadings/4dcelltrack/tree/main" target="_blank">GitHub</a></li>
                 </ul>
@@ -30,14 +29,148 @@
             <section class="primary">
                 <h2>Cell Tracking Pipeline</h2>
                 <p>A MATLAB-based pipeline for 4D cell migration analysis.</p>
+
+                <h4>Pipeline Overview</h4>
+                <ol>
+                    <li><strong>Preprocessing</strong> - Convert raw microscopy data (.nd2) into trackable TIFF stacks.</li>
+                    <li><strong>Manual Tracking (External)</strong> - Perform cell tracking in ImageJ or similar software.</li>
+                    <li><strong>Data Collection</strong> - Aggregate tracking outputs into a unified dataset.</li>
+                    <li><strong>Filtering (Optional)</strong> - Remove duplicate or overlapping tracks.</li>
+                    <li><strong>Metric Computation</strong> - Calculate speed and displacement metrics per cell.</li>
+                    <li><strong>Statistical Analysis</strong> - Compare experimental groups and compute statistics.</li>
+                    <li><strong>Additional Metrics</strong> - Compute MSD and turning angles for deeper motion analysis.</li>
+                    <li><strong>Visualization</strong> - Generate representative trajectory plots.</li>
+                </ul>
             </section>
 
             <section class="card">
-                <h3>Pipeline Operation</h3>
-                <hr>
-                <p>Placeholder for pipeline steps and examples.</p>
+    <h3>Pipeline Operation</h3>
+    <hr>
 
-            </section>
+    <h4>Step 1 - Preprocess Raw Imaging Data</h4>
+    <p>
+        Begin with raw microscopy files (e.g., Nikon <code>.nd2</code>). Use 
+        <a href="#preProcessND2"><code>preProcessND2</code></a> to extract a specific series/channel combination, apply optional 
+        spatial binning, and perform Gaussian background subtraction. Save to a shared tracking folder.
+    </p>
+    <p>
+        The output is a cleaned BigTIFF file suitable for manual cell tracking.
+    </p>
+
+<pre class="codeblock"><code>preProcessND2(<span class="string">"data/example.nd2"</span>, <span class="string">"output"</span>, ...
+    SeriesIndex=1, ChannelIndex=2);
+</code></pre>
+
+    <h4>Step 2 - Perform Manual Cell Tracking (External)</h4>
+    <p>
+        Load the processed TIFF into ImageJ (or equivalent image software) and perform 
+        cell tracking using OrthoTrack, saving cell trajectories as ROIs. 
+        Export saved results as <code>Results.csv</code>.
+    </p>
+    <p>
+        Each tracker's data should be stored in their own folder. Example:
+    </p>
+
+<pre class="codeblock"><code>rootFolder/
+├── Channel1/
+│   ├── Dataset1/
+│   │   ├── Series1/
+│   │   │   ├── Tracker1/
+│   │   │   │   └── Results.csv
+│   │   │   ├── Tracker2/
+│   │   │   │   └── Results.csv
+</code></pre>
+
+    <h4>Step 3 - Collect Tracking Data</h4>
+    <p>
+        When all cells have been tracked across all images, use <a href="#collectTrackingData"><code>collectTrackingData</code></a>
+        to combine all tracking outputs into a single table. 
+        This step and the following ones can be performed on our tracking coordinate data, located <a href="https://github.com/codyheadings/4dcelltrack/tree/tracking-data">here</a>.
+    </p>
+    <p>
+        Folder names are automatically converted into grouping variables 
+        (<code>Group1</code>, <code>Group2</code>, etc.).
+    </p>
+
+<pre class="codeblock"><code>tracks = collectTrackingData(<span class="string">"example"</span>, ...
+    XYScale=0.65, ZScale=20, TScale=30);
+</code></pre>
+
+    <h4>Step 4 - (Optional) Remove Duplicate Tracks</h4>
+    <p>
+        If multiple trackers labeled the same cells, you can use 
+        <a href="#filterDuplicateTracks"><code>filterDuplicateTracks</code></a> to remove redundant trajectories 
+        based on detected spatial overlap. This is not essential and there are some cases
+        where you may want to leave the data unfiltered.
+    </p>
+
+<pre class="codeblock"><code>tracks = filterDuplicateTracks(tracks);
+</code></pre>
+
+    <h4>Step 5 - Compute Cell Metrics</h4>
+    <p>
+        Run <a href="#computeTrackingMetrics"><code>computeTrackingMetrics</code></a> to calculate per-cell movement 
+        statistics, including:
+    </p>
+    <ul>
+        <li>Speed (average, cumulative, variance)</li>
+        <li>Distance (total, net displacement)</li>
+        <li>Directional persistence ratio</li>
+    </ul>
+
+<pre class="codeblock"><code>results = computeTrackingMetrics(tracks, <span class="string">"output"</span>);
+</code></pre>
+
+    <p>
+        Output files are generated per top-level group (e.g., per channel).
+    </p>
+
+    <h4>Step 6 - Statistical Analysis</h4>
+    <p>
+        Use <a href="#analyzeByGroup"><code>analyzeByGroup</code></a> to compare experimental groups and 
+        compute statistical significance (e.g., Shapiro-Wilk normality tests 
+        and pairwise comparisons).
+    </p>
+
+<pre class="codeblock"><code>analysis = analyzeByGroup(results.C1, ...
+    <span class="string">"/swtest"</span>, <span class="string">"Dataset"</span>, <span class="string">"output/analysis.xlsx"</span>);
+</code></pre>
+
+    <h4>Step 7 - Additional Motion Analysis</h4>
+
+    <h5>Mean Squared Displacement (MSD)</h5>
+    <p>
+        Use <a href="#computeMSD"><code>computeMSD</code></a> to quantify diffusive behavior of cells.
+    </p>
+    <p>
+        <strong>Important:</strong> This function requires the 
+        <strong>@msdanalyzer</strong> MATLAB toolkit (developed by 
+        Jean-Yves Tinevez). Ensure it is installed and added to your MATLAB path.
+    </p>
+
+<pre class="codeblock"><code>mmsd = computeMSD(<span class="string">"tracks.xlsx"</span>, <span class="string">"output"</span>);
+</code></pre>
+
+    <h5>Turning Angles</h5>
+    <p>
+        Use <a href="#computeTurningAngles"><code>computeTurningAngles</code></a> to measure directional changes 
+        between consecutive movement steps.
+    </p>
+
+<pre class="codeblock"><code>angles = computeTurningAngles(<span class="string">"tracks.xlsx"</span>, <span class="string">"output"</span>);
+</code></pre>
+
+    <h4>Step 8 - Visualization</h4>
+    <p>
+        Generate representative trajectory plots using 
+        <a href="#plotRepresentativeGraphs"><code>plotRepresentativeGraphs</code></a>. Tracks are selected based on 
+        median path length for visualization consistency.
+    </p>
+
+<pre class="codeblock"><code>plotRepresentativeGraphs(<span class="string">"example/AggregatedResults.xlsx"</span>, ...
+    <span class="string">"figures"</span>, 8, 0);
+</code></pre>
+</section>
 
             <section class="card">
                 <h3>Script Documentation</h3>
@@ -46,8 +179,8 @@
 
                 <!-- preProcessND2.m -->
                 <div class="doc">
-                <input id="preProcessND2-toggle" class="hidden" type="checkbox">
-                <label for="preProcessND2-toggle" class="dropdown-label"><h4>preProcessND2.m</h4></label>
+                <input id="pre-toggle" class="hidden" type="checkbox">
+                <label for="pre-toggle" class="dropdown-label"><h4 id="preProcessND2">preProcessND2.m</h4></label>
 
 <div class="dropdown">
 <p><strong>Description:</strong><br>
@@ -94,8 +227,7 @@ and saves the processed file as a BigTIFF.
 </ul>
 
 <p><strong>Usage Example:</strong></p>
-<pre class="codeblock"><code>
-preProcessND2( ...
+<pre class="codeblock"><code>preProcessND2( ...
     <span class="string">"data/sample.nd2"</span>, ...
     <span class="string">"output"</span>, ...
     <span class="string">'SeriesIndex'</span>, 1, ... <span class="comment">% or SeriesIndex = 1</span>
@@ -113,7 +245,7 @@ preProcessND2( ...
 <!-- compileResultsCSV.m -->
                 <div class="doc">
                 <input id="compile-toggle" class="hidden" type="checkbox">
-                <label for="compile-toggle" class="dropdown-label"><h4>compileResultsCSV.m</h4></label>
+                <label for="compile-toggle" class="dropdown-label"><h4 id="compileResultsCSV">compileResultsCSV.m</h4></label>
 
 <div class="dropdown">
 <p><strong>Description:</strong><br>
@@ -149,8 +281,7 @@ Optional (but recommended) X, Y, Z, and Time unit conversions can be applied dur
 </ul>
 
 <p><strong>Expected Folder Structure:</strong></p>
-<pre class="codeblock"><code>
-inputFolder/
+<pre class="codeblock"><code>inputFolder/
 ├── Tracker1/
 │   └── Results.csv
 ├── Tracker2/
@@ -158,8 +289,7 @@ inputFolder/
 </code></pre>
 
 <p><strong>Usage Example:</strong></p>
-<pre class="codeblock"><code>
-compiledData = compileResultsCSV( ...
+<pre class="codeblock"><code>compiledData = compileResultsCSV( ...
     <span class="string">"data/inputFolder"</span>, ...
     <span class="string">"data/outputFolder"</span>, ...
     <span class="string">'XYScale'</span>, 0.65, ... <span class="comment">% or XYScale = 0.65</span>
@@ -176,7 +306,7 @@ head(compiledData) <span class="comment">% Preview results</span>
 <!-- cellDistances.m -->
                 <div class="doc">
                 <input id="dist-toggle" class="hidden" type="checkbox">
-                <label for="dist-toggle" class="dropdown-label"><h4>cellDistances.m</h4></label>
+                <label for="dist-toggle" class="dropdown-label"><h4 id="cellDistances">cellDistances.m</h4></label>
 
 <div class="dropdown">
 <p><strong>Description:</strong><br>
@@ -220,8 +350,7 @@ and uses <code>segmentTracks</code> to separate individual trajectories.
 </ul>
 
 <p><strong>Usage Example:</strong></p>
-<pre class="codeblock"><code>
-data = readtable(<span class="string">'compiledResults.xlsx'</span>);
+<pre class="codeblock"><code>data = readtable(<span class="string">'compiledResults.xlsx'</span>);
 
 distanceTable = cellDistances(data, <span class="string">"output"</span>);
 
@@ -234,7 +363,7 @@ head(distanceTable) <span class="comment">% preview results</span>
 <!-- cellSpeeds.m -->
                 <div class="doc">
                 <input id="speed-toggle" class="hidden" type="checkbox">
-                <label for="speed-toggle" class="dropdown-label"><h4>cellSpeeds.m</h4></label>
+                <label for="speed-toggle" class="dropdown-label"><h4 id="cellSpeeds">cellSpeeds.m</h4></label>
 
 <div class="dropdown">
 <p><strong>Description:</strong><br>
@@ -279,8 +408,7 @@ and second halves.
 </ul>
 
 <p><strong>Usage Example:</strong></p>
-<pre class="codeblock"><code>
-data = readtable(<span class="string">'compiledResults.xlsx'</span>);
+<pre class="codeblock"><code>data = readtable(<span class="string">'compiledResults.xlsx'</span>);
 
 speedTable = cellSpeeds( ...
     data, ...
@@ -297,7 +425,7 @@ mean(speedTable.AvgCellSpeed) <span class="comment">% average across all cells</
 <!-- collectTrackingData.m -->
 <div class="doc">
     <input id="collect-toggle" class="hidden" type="checkbox">
-    <label for="collect-toggle" class="dropdown-label"><h4>collectTrackingData.m</h4></label>
+    <label for="collect-toggle" class="dropdown-label"><h4 id="collectTrackingData">collectTrackingData.m</h4></label>
 
     <div class="dropdown">
         <p><strong>Description:</strong><br>
@@ -315,8 +443,7 @@ mean(speedTable.AvgCellSpeed) <span class="comment">% average across all cells</
 
         <p><strong>Example Folder Structure:</strong></p>
 
-<pre class="codeblock">
-<code>rootFolder/
+<pre class="codeblock"><code>rootFolder/
 ├── Channel1/
 │   ├── Dataset1/
 │   │   ├── Series1/
@@ -353,8 +480,7 @@ mean(speedTable.AvgCellSpeed) <span class="comment">% average across all cells</
 
         <p><strong>Usage Example:</strong></p>
 
-<pre class="codeblock">
-<code><span class="comment">% Collect all tracks with unit conversion applied</span>
+<pre class="codeblock"><code><span class="comment">% Collect all tracks with unit conversion applied</span>
 tracks = collectTrackingData(<span class="string">'/data/root'</span>, ...
     XYScale=0.65, ...
     ZScale=20, ...
@@ -381,7 +507,7 @@ tracks = collectTrackingData(<span class="string">'/data/root'</span>, ...
 <!-- filterDuplicateTracks.m -->
                 <div class="doc">
                 <input id="filter-toggle" class="hidden" type="checkbox">
-                <label for="filter-toggle" class="dropdown-label"><h4>filterDuplicateTracks.m</h4></label>
+                <label for="filter-toggle" class="dropdown-label"><h4 id="filterDuplicateTracks">filterDuplicateTracks.m</h4></label>
 
 <div class="dropdown">
 <p>
@@ -427,15 +553,11 @@ tracks = collectTrackingData(<span class="string">'/data/root'</span>, ...
     <strong>Usage Example:</strong>
 </p>
 
-<pre class="codeblock">
-<code>
-data = readtable(<span class="string">"compiledResults.xlsx"</span>); 
+<pre class="codeblock"><code>data = readtable(<span class="string">"compiledResults.xlsx"</span>); 
 <span class="comment">% Load compiled tracking data</span>
 
 filtered = filterDuplicateTracks(data); 
-<span class="comment">% Remove duplicate trajectories</span>
-</code>
-</pre>
+<span class="comment">% Remove duplicate trajectories</span></code></pre>
 
 <p>
     <strong>Notes:</strong><br>
@@ -450,7 +572,7 @@ filtered = filterDuplicateTracks(data);
 <!-- computeTrackingMetrics.m -->
 <div class="doc">
     <input id="metrics-toggle" class="hidden" type="checkbox">
-    <label for="metrics-toggle" class="dropdown-label"><h4>computeTrackingMetrics.m</h4></label>
+    <label for="metrics-toggle" class="dropdown-label"><h4 id="computeTrackingMetrics">computeTrackingMetrics.m</h4></label>
 
     <div class="dropdown">
         <p><strong>Description:</strong><br>
@@ -501,8 +623,7 @@ filtered = filterDuplicateTracks(data);
 
         <p><strong>Usage Example:</strong></p>
 
-<pre class="codeblock">
-<code><span class="comment">% Pass tracks directly from collectTrackingData</span>
+<pre class="codeblock"><code><span class="comment">% Pass tracks directly from collectTrackingData</span>
 tracks  = collectTrackingData(<span class="string">'/data/root'</span>, XYScale=0.65, ZScale=20, TScale=30);
 results = computeTrackingMetrics(tracks, <span class="string">'/output'</span>);
 
@@ -512,9 +633,7 @@ tracks  = filterDuplicateTracks(tracks);
 results = computeTrackingMetrics(tracks, <span class="string">'/output'</span>);
 
 <span class="comment">% Access one group's results</span>
-c1Table = results.C1;
-</code>
-</pre>
+c1Table = results.C1;</code></pre>
 
         <p><strong>Notes:</strong></p>
         <ul>
@@ -528,7 +647,7 @@ c1Table = results.C1;
 <!-- analyzeByGroup.m -->
                 <div class="doc">
                 <input id="analyze-toggle" class="hidden" type="checkbox">
-                <label for="analyze-toggle" class="dropdown-label"><h4>analyzeByGroup.m</h4></label>
+                <label for="analyze-toggle" class="dropdown-label"><h4 id="analyzeByGroup">analyzeByGroup.m</h4></label>
 
 <div class="dropdown">
 <p>
@@ -585,9 +704,7 @@ c1Table = results.C1;
     <strong>Usage Example:</strong>
 </p>
 
-<pre class="codeblock">
-<code>
-<span class="comment">% aggregatedTracks is a table with all tracking data</span>
+<pre class="codeblock"><code><span class="comment">% aggregatedTracks is a table with all tracking data</span>
 results = computeTrackingMetrics(aggregatedTracks, <span class="string">'/output'</span>)
 c1Analysis = analyzeByGroup(results.C1, <span class="string">'/swtest'</span>, 
     ... <span class="string">'Dataset'</span>, <span class="string">'/output/C1AnalysisResults.xlsx'</span>) <span class="comment">% Compare each dataset in Channel 1</span>
@@ -595,8 +712,7 @@ c2Analysis = analyzeByGroup(results.C2, <span class="string">'/swtest'</span>,
     ... <span class="string">'Series'</span>, <span class="string">'/output/C1AnalysisResults.xlsx'</span>) <span class="comment">% Compare each series in Channel 2</span>
 
 <span class="comment">% Inspect a specific pairwise sheet</span>
-c1Analysis.PairwiseTests.Dataset11_vs_Dataset12
-</code></pre>
+c1Analysis.PairwiseTests.Dataset11_vs_Dataset12</code></pre>
 <hr>
 </div>
 </div>
@@ -604,7 +720,7 @@ c1Analysis.PairwiseTests.Dataset11_vs_Dataset12
 <!-- computeMSD.m -->
                 <div class="doc">
                 <input id="msd-toggle" class="hidden" type="checkbox">
-                <label for="msd-toggle" class="dropdown-label"><h4>computeMSD.m</h4></label>
+                <label for="msd-toggle" class="dropdown-label"><h4 id="computeMSD">computeMSD.m</h4></label>
 
 <div class="dropdown">
 <p>
@@ -666,16 +782,13 @@ c1Analysis.PairwiseTests.Dataset11_vs_Dataset12
     <strong>Usage Example:</strong>
 </p>
 
-<pre class="codeblock">
-<code><span class="comment">% Load tracking data from file</span>
+<pre class="codeblock"><code><span class="comment">% Load tracking data from file</span>
 mmsd = computeMSD(<span class="string">'/example/data/tracks.xlsx'</span>);
 
 <span class="comment">% Use an existing table and save a figure</span>
 data = readtable(<span class="string">'tracks.xlsx'</span>);
 mmsd = computeMSD(data, <span class="string">'/output/folder'</span>, ...
-    OutputFilename=<span class="string">"MyMSD.fig"</span>);
-</code>
-</pre>
+    OutputFilename=<span class="string">"MyMSD.fig"</span>);</code></pre>
 <hr>
 </div>
 </div>
@@ -683,7 +796,7 @@ mmsd = computeMSD(data, <span class="string">'/output/folder'</span>, ...
 <!-- computeTurningAngles.m -->
                 <div class="doc">
                 <input id="angle-toggle" class="hidden" type="checkbox">
-                <label for="angle-toggle" class="dropdown-label"><h4>computeTurningAngles.m</h4></label>
+                <label for="angle-toggle" class="dropdown-label"><h4 id="computeTurningAngles">computeTurningAngles.m</h4></label>
 
 <div class="dropdown">
 <p>
@@ -734,16 +847,13 @@ mmsd = computeMSD(data, <span class="string">'/output/folder'</span>, ...
     <strong>Usage Example:</strong>
 </p>
 
-<pre class="codeblock">
-<code><span class="comment">% Compute angles from a file</span>
+<pre class="codeblock"><code><span class="comment">% Compute angles from a file</span>
 angles = computeTurningAngles(<span class="string">'/example/data/tracks.xlsx'</span>);
 
 <span class="comment">% Compute and save results</span>
 data = readtable(<span class="string">'tracks.xlsx'</span>);
 angles = computeTurningAngles(data, <span class="string">'/output'</span>, ...
-    OutputFilename=<span class="string">"Angles.csv"</span>);
-</code>
-</pre>
+    OutputFilename=<span class="string">"Angles.csv"</span>);</code></pre>
 <hr>
 </div>
 </div>
@@ -751,7 +861,7 @@ angles = computeTurningAngles(data, <span class="string">'/output'</span>, ...
 <!-- plotRepresentativeGraphs.m -->
                 <div class="doc">
                 <input id="plot-toggle" class="hidden" type="checkbox">
-                <label for="plot-toggle" class="dropdown-label"><h4>plotRepresentativeGraphs.m</h4></label>
+                <label for="plot-toggle" class="dropdown-label"><h4 id="plotRepresentativeGraphs">plotRepresentativeGraphs.m</h4></label>
 
 <div class="dropdown">
 <p><strong>Description:</strong><br>
@@ -796,8 +906,7 @@ is selected for plotting. Two figures are generated:
 </ul>
 
 <p><strong>Usage Example:</strong></p>
-<pre class="codeblock"><code>
-[fig1, fig2] = plotRepresentativeGraphs( ...
+<pre class="codeblock"><code>[fig1, fig2] = plotRepresentativeGraphs( ...
     <span class="string">"AggregatedResults.xlsx"</span>, ...
     <span class="string">"figures"</span>, ...
     8, ...
@@ -817,7 +926,7 @@ is selected for plotting. Two figures are generated:
 <!-- segmentTracks.m -->
                 <div class="doc">
                 <input id="segment-toggle" class="hidden" type="checkbox">
-                <label for="segment-toggle" class="dropdown-label"><h4>segmentTracks.m</h4></label>
+                <label for="segment-toggle" class="dropdown-label"><h4 id="segmentTracks">segmentTracks.m</h4></label>
 
 <div class="dropdown">
 <p><strong>Description:</strong><br>
@@ -845,8 +954,7 @@ A new track is assumed to begin whenever the time column (T) resets to 0.
 </ul>
 
 <p><strong>Usage Example:</strong></p>
-<pre class="codeblock"><code>
-data = readtable(<span class="string">'example/directory/trackingData.xlsx'</span>);
+<pre class="codeblock"><code>data = readtable(<span class="string">'example/directory/trackingData.xlsx'</span>);
 
 tracks = segmentTracks(data);
 
