@@ -3,8 +3,8 @@ function distanceTable = cellDistances(compiledData, outputFolder, options)
 % compiled tracking data produced by compileResultsFromCSV.
 %
 % For each cell track, computes cumulative path length, average
-% frame-to-frame displacement, net displacement, and the directional 
-% persistence ratio. Results are returned as a table and optionally saved.
+% frame-to-frame displacement, net displacement, and the directionality
+% ratio. Results are returned as a table and optionally saved.
 %
 % INPUT:
 % 
@@ -33,7 +33,7 @@ function distanceTable = cellDistances(compiledData, outputFolder, options)
 %           AvgFrameDistance - mean step-to-step displacement
 %           CumulativeDistance - total path length across all frames
 %           RelativeDisplacement - distance from first to last position
-%           DirectionalPersistence - efficiency of motion toward end point
+%           DirectionalityRatio - efficiency of motion toward end point
 
     arguments
         compiledData (:,:) table
@@ -91,9 +91,9 @@ function distanceTable = cellDistances(compiledData, outputFolder, options)
         relativeDisplacements(k) = sqrt(dx^2 + dy^2 + dz^2);
     end
 
-    % Directional Persistence = net displacement / total path length.
+    % Directionality Ratio = net displacement / total path length.
     % ** Will produce NaN if CumulativeDistance == 0. **
-    directionalPersistence = relativeDisplacements ./ cumulativeDistances;
+    directionalityRatio = relativeDisplacements ./ cumulativeDistances;
  
     % Assemble output table
     cellIndex = (1:numCells)';
@@ -102,13 +102,13 @@ function distanceTable = cellDistances(compiledData, outputFolder, options)
         num2cell(avgFrameDistances), ...
         num2cell(cumulativeDistances), ...
         num2cell(relativeDisplacements), ...
-        num2cell(directionalPersistence), ...
+        num2cell(directionalityRatio), ...
         'VariableNames', { ...
             'Cell', ...
             'AvgFrameDistance', ...
             'CumulativeDistance', ...
             'RelativeDisplacement', ...
-            'DirectionalPersistence'} );
+            'DirectionalityRatio'} );
 
     % Optionally write to disk
     if outputFolder ~= ""
