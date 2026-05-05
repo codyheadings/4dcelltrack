@@ -3,15 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="description" content="Repository page for cell migration tracking pipeline.">
+    <meta name="description" content="Documentation for a 4D cell migration MATLAB toolkit used on organoids and assembloids.">
     <link type="text/css" rel="stylesheet" href="stylesheets/style.css">
-    <title>Home | AssembloidTrack</title>
+    <title>ACMT</title>
 </head>
 
 <body>
     <header class="site-header">
         <div class="header-inner">
-            <h1 class="title">AssembloidTrack Pipeline</h1>
+            <h1 class="title">ACMT Pipeline</h1>
 
             <nav class="nav">
                 <ul>
@@ -27,8 +27,8 @@
         <main class="content">
 
             <section class="primary">
-                <h2>Cell Tracking Pipeline</h2>
-                <p>A MATLAB-based pipeline for 4D cell migration analysis.</p>
+                <h2>AssembloidCellMigrationTracker (ACMT)</h2>
+                <p>A MATLAB-based toolkit for 4D cell migration analysis.</p>
 
                 <h4>Pipeline Overview</h4>
                 <ol>
@@ -38,7 +38,7 @@
                     <li><strong>Filtering (Optional)</strong> - Remove duplicate or overlapping tracks.</li>
                     <li><strong>Metric Computation</strong> - Calculate speed and displacement metrics per cell.</li>
                     <li><strong>Statistical Analysis</strong> - Compare experimental groups and compute statistics.</li>
-                    <li><strong>Additional Metrics</strong> - Compute MSD and turning angles for deeper motion analysis.</li>
+                    <li><strong>Additional Metrics</strong> - Compute MSD and turning angles for further motion analysis.</li>
                     <li><strong>Visualization</strong> - Generate representative trajectory plots.</li>
                 </ul>
             </section>
@@ -85,7 +85,7 @@
     <p>
         When all cells have been tracked across all images, use <a href="#collectTrackingData"><code>collectTrackingData</code></a>
         to combine all tracking outputs into a single table. 
-        This step and the following ones can be performed on our tracking coordinate data, located <a href="https://github.com/codyheadings/4dcelltrack/tree/tracking-data">here</a>.
+        This step and the following ones can be performed on our tracking coordinate data, located <a target="_blank" href="https://github.com/codyheadings/4dcelltrack/tree/tracking-data">here</a>.
     </p>
     <p>
         Folder names are automatically converted into grouping variables 
@@ -115,7 +115,7 @@
     <ul>
         <li>Speed (average, cumulative, variance)</li>
         <li>Distance (total, net displacement)</li>
-        <li>Directional persistence ratio</li>
+        <li>Directionality ratio</li>
     </ul>
 
 <pre class="codeblock"><code>results = computeTrackingMetrics(tracks, <span class="string">"output"</span>);
@@ -144,7 +144,7 @@
     </p>
     <p>
         <strong>Important:</strong> This function requires the 
-        <strong>@msdanalyzer</strong> MATLAB toolkit (developed by 
+        <strong><a target="_blank" href="https://tinevez.github.io/msdanalyzer/">@msdanalyzer</a></strong> MATLAB toolkit (developed by 
         Jean-Yves Tinevez). Ensure it is installed and added to your MATLAB path.
     </p>
 
@@ -312,7 +312,7 @@ head(compiledData) <span class="comment">% Preview results</span>
 <p><strong>Description:</strong><br>
 <code>cellDistances</code> computes displacement-based metrics for each tracked cell, 
 including total distance traveled, average frame-to-frame displacement, net displacement,
-and the directional persistence ratio. Operates on compiled tracking data (from <code>compileResultsCSV.m</code>) 
+and the directionality ratio. Operates on compiled tracking data (from <code>compileResultsCSV.m</code>) 
 and uses <code>segmentTracks</code> to separate individual trajectories.
 </p>
 
@@ -338,7 +338,7 @@ and uses <code>segmentTracks</code> to separate individual trajectories.
         <li>AvgFrameDistance - mean displacement between frames</li>
         <li>CumulativeDistance - total distance traveled across all frames</li>
         <li>RelativeDisplacement - net displacement between first and last frame</li>
-        <li>DirectionalPersistence - Net displacement / total path length</li>
+        <li>DirectionalityRatio - Net displacement / total path length</li>
     </ul>
 </ul>
 
@@ -616,7 +616,7 @@ filtered = filterDuplicateTracks(data);
                     <li>Group Columns (<code>Group1</code>...<code>GroupN</code>)</li>
                     <li><code>TrackerName</code>, <code>Cell</code></li>
                     <li>Speed metrics: <code>AvgCellSpeed</code>, <code>CumulativeCellSpeed</code>, <code>VarianceEntirePeriod</code>, <code>VarianceFirstHalf</code>, <code>VarianceLastHalf</code></li>
-                    <li>Distance metrics: <code>AvgFrameDistance</code>, <code>CumulativeDistance</code>, <code>RelativeDisplacement</code>, <code>DirectionalPersistence</code></li>
+                    <li>Distance metrics: <code>AvgFrameDistance</code>, <code>CumulativeDistance</code>, <code>RelativeDisplacement</code>, <code>DirectionalityRatio</code></li>
                 </ul>
             </li>
         </ul>
@@ -971,7 +971,7 @@ plot3(track1.X, track1.Y, track1.Z);</code></pre>
     </div>
 
     <footer>
-        <p>Last Updated: May 2nd, 2026</p>
+        <p>Last Updated: May 4, 2026</p>
     </footer>
 </body>
 
